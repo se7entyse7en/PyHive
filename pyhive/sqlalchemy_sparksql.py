@@ -1,9 +1,12 @@
-from . import sqlalchemy_hive
-
+import logging
 import re
 
 from sqlalchemy import exc
 from sqlalchemy.engine import default
+
+from . import sqlalchemy_hive
+
+_logger = logging.getLogger(__name__)
 
 
 class SparkSqlDialect(sqlalchemy_hive.HiveDialect):
@@ -13,13 +16,18 @@ class SparkSqlDialect(sqlalchemy_hive.HiveDialect):
     def _get_table_columns(self, connection, table_name, schema):
         full_table = table_name
 
+        _logger.info('Schema name: %s', schema)
+        _logger.info('Full table name: %s', full_table)
         # Don't qualify the table with default.
         splitted = full_table.split('.')
+        _logger.info('Splitted full table name: %s', splitted)
         if len(splitted) == 2 and splitted[0] == 'default':
             full_table = splitted[1]
         # Only qualify the table if the schema exists and is not default.
         elif schema and schema.lower() != "default":
             full_table = schema + '.' + table_name
+
+        _logger.info('Full table name: %s', full_table)
         # TODO using TGetColumnsReq hangs after sending TFetchResultsReq.
         # Using DESCRIBE works but is uglier.
         try:
