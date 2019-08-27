@@ -366,10 +366,20 @@ class Cursor(common.DBAPICursor):
         self._operationHandle = response.operationHandle
 
     def cancel(self, operation_handle=None):
-        operation_handle = operation_handle or self._operationHandle
+        if operation_handle is not None:
+            owned = False
+        else:
+            owned = True
+            operation_handle = self._operationHandle
+
         req = ttypes.TCancelOperationReq(operationHandle=operation_handle)
         response = self._connection.client.CancelOperation(req)
         _check_status(response)
+
+        if not owned:
+            request = ttypes.TCloseOperationReq(operationHandle=operation_handle)
+            response = self._connection.client.CloseOperation(request)
+            _check_status(response)
 
     def _fetch_more(self):
         """Send another TFetchResultsReq and update state"""
